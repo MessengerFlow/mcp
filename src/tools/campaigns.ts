@@ -8,10 +8,10 @@ export function registerCampaignTools(server: McpServer) {
     'Create, update, start, stop, and delete campaigns. View campaign leads and activity. Manage campaign account assignments.',
     {
       action: z.enum([
-        'list', 'create', 'update', 'start', 'stop', 'delete',
+        'list', 'get', 'create', 'update', 'start', 'stop', 'delete',
         'get_leads', 'get_activity', 'get_count', 'add_account', 'remove_account',
       ]).describe('Action to perform'),
-      id: z.string().optional().describe('Campaign ID (required for update/start/stop/delete/get_leads/get_activity)'),
+      id: z.string().optional().describe('Campaign ID (required for get/update/start/stop/delete/get_leads/get_activity)'),
       data: z.record(z.unknown()).optional().describe('Request body for create/update actions'),
       account_id: z.string().optional().describe('Account ID for add_account/remove_account'),
       limit: z.number().optional().describe('Pagination limit'),
@@ -25,6 +25,10 @@ export function registerCampaignTools(server: McpServer) {
         switch (action) {
           case 'list':
             result = await api('/campaigns', { params: { limit, offset, search } })
+            break
+          case 'get':
+            if (!id) return error('Campaign ID is required')
+            result = await api(`/campaigns/${id}`)
             break
           case 'create':
             result = await api('/campaigns', { method: 'POST', body: data })

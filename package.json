@@ -1,6 +1,6 @@
 {
   "name": "@messengerflow/mcp-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP server for MessengerFlow — manage campaigns, accounts, leads, inbox, and analytics via AI assistants",
   "bin": {
     "messengerflow-mcp": "./dist/index.js"

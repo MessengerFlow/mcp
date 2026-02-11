@@ -7,8 +7,8 @@ export function registerAccountTools(server: McpServer) {
     'manage_accounts',
     'Add, update, and delete Facebook accounts. View account stats and logs.',
     {
-      action: z.enum(['list', 'add', 'update', 'delete', 'get_stats', 'get_logs']).describe('Action to perform'),
-      id: z.string().optional().describe('Account ID (required for update/delete/get_stats/get_logs)'),
+      action: z.enum(['list', 'get', 'add', 'update', 'delete', 'get_stats', 'get_logs']).describe('Action to perform'),
+      id: z.string().optional().describe('Account ID (required for get/update/delete/get_stats/get_logs)'),
       data: z.record(z.unknown()).optional().describe('Request body for add/update actions'),
       limit: z.number().optional().describe('Pagination limit'),
       offset: z.number().optional().describe('Pagination offset'),
@@ -20,6 +20,10 @@ export function registerAccountTools(server: McpServer) {
         switch (action) {
           case 'list':
             result = await api('/accounts', { params: { limit, offset } })
+            break
+          case 'get':
+            if (!id) return error('Account ID is required')
+            result = await api(`/accounts/${id}`)
             break
           case 'add':
             result = await api('/accounts', { method: 'POST', body: data })
