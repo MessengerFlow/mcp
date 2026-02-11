@@ -1,6 +1,6 @@
 services:
   mcp:
-    image: ghcr.io/messengerflow/messengerflow-mcp:production
+    image: ghcr.io/messengerflow/messengerflow-mcp:latest
     env_file: .env.production
     ports:
       - "3003:3003"
