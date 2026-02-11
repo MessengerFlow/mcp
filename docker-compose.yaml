@@ -1,0 +1,9 @@
+services:
+  mcp:
+    image: ghcr.io/messengerflow/messengerflow-mcp:production
+    env_file: .env.production
+    ports:
+      - "3003:3003"
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"

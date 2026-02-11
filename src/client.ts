@@ -1,4 +1,5 @@
 import { config } from './config.js'
+import { tokenStore } from './auth.js'
 
 interface RequestOptions {
   method?: string
@@ -30,8 +31,13 @@ export async function api<T = unknown>(path: string, options: RequestOptions = {
   }
 
   const headers: Record<string, string> = {
-    'X-Api-Key': config.apiKey,
     'Accept': 'application/json',
+  }
+  const bearerToken = tokenStore.getStore()
+  if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`
+  } else {
+    headers['X-Api-Key'] = config.apiKey
   }
   if (body) headers['Content-Type'] = 'application/json'
 

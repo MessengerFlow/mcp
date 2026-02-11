@@ -24,6 +24,20 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
+### Remote Server (OAuth)
+
+No API key needed — authenticates with your MessengerFlow account:
+
+```json
+{
+  "mcpServers": {
+    "messengerflow": {
+      "url": "https://mcp.messengerflow.com/mcp"
+    }
+  }
+}
+```
+
 ### Local Development
 
 ```bash
