@@ -1,5 +1,7 @@
 # MessengerFlow MCP Server
 
+[![npm](https://img.shields.io/npm/v/@messengerflow/mcp-server)](https://www.npmjs.com/package/@messengerflow/mcp-server)
+
 MCP server for [MessengerFlow](https://messengerflow.com) — manage campaigns, accounts, leads, inbox, and analytics from AI assistants like Claude Desktop.
 
 ## Setup
