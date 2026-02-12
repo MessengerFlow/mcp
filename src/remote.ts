@@ -42,7 +42,9 @@ class KeycloakOAuthProvider implements OAuthServerProvider {
       code_challenge_method: 'S256',
     })
     if (params.state) searchParams.set('state', params.state)
-    if (params.scopes?.length) searchParams.set('scope', params.scopes.join(' '))
+    const ALLOWED_SCOPES = ['openid', 'profile', 'email', 'offline_access']
+    const scopes = params.scopes?.filter(s => ALLOWED_SCOPES.includes(s))
+    if (scopes?.length) searchParams.set('scope', scopes.join(' '))
     url.search = searchParams.toString()
     res.redirect(url.toString())
   }
@@ -109,6 +111,7 @@ class KeycloakOAuthProvider implements OAuthServerProvider {
 const app = createMcpExpressApp({
   allowedHosts: ['mcp.messengerflow.com', 'localhost', '127.0.0.1'],
 })
+app.set('trust proxy', 1)
 
 const provider = new KeycloakOAuthProvider()
 const issuerUrl = new URL(ISSUER_URL)
