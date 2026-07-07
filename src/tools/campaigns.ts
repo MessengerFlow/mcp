@@ -12,7 +12,7 @@ export function registerCampaignTools(server: McpServer) {
         'get_leads', 'get_activity', 'get_count', 'add_account', 'remove_account',
       ]).describe('Action to perform'),
       id: z.string().optional().describe('Campaign ID (required for get/update/start/stop/delete/get_leads/get_activity)'),
-      data: z.record(z.unknown()).optional().describe('Request body for create/update actions'),
+      data: z.record(z.string(), z.unknown()).optional().describe('Request body for create/update actions'),
       account_id: z.string().optional().describe('Account ID for add_account/remove_account'),
       limit: z.number().optional().describe('Pagination limit'),
       offset: z.number().optional().describe('Pagination offset'),

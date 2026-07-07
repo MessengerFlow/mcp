@@ -12,7 +12,7 @@ export function registerLeadTools(server: McpServer) {
         'merge', 'rename', 'delete', 'get_leads', 'export', 'rescrape', 'retry',
       ]).describe('Action to perform'),
       id: z.string().optional().describe('Collection ID (required for get_collection/rename/delete/get_leads/export/rescrape/retry)'),
-      data: z.record(z.unknown()).optional().describe('Request body for import/scrape/merge/rename actions'),
+      data: z.record(z.string(), z.unknown()).optional().describe('Request body for import/scrape/merge/rename actions'),
       limit: z.number().optional().describe('Pagination limit'),
       offset: z.number().optional().describe('Pagination offset'),
       search: z.string().optional().describe('Search query'),

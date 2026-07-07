@@ -9,7 +9,7 @@ export function registerAccountTools(server: McpServer) {
     {
       action: z.enum(['list', 'get', 'add', 'update', 'delete', 'get_stats', 'get_logs']).describe('Action to perform'),
       id: z.string().optional().describe('Account ID (required for get/update/delete/get_stats/get_logs)'),
-      data: z.record(z.unknown()).optional().describe('Request body for add/update actions'),
+      data: z.record(z.string(), z.unknown()).optional().describe('Request body for add/update actions'),
       limit: z.number().optional().describe('Pagination limit'),
       offset: z.number().optional().describe('Pagination offset'),
     },

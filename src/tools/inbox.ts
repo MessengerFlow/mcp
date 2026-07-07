@@ -11,7 +11,7 @@ export function registerInboxTools(server: McpServer) {
         'list', 'search', 'get_messages', 'send_message', 'update', 'delete', 'get_unread_count',
       ]).describe('Action to perform'),
       id: z.string().optional().describe('Conversation ID (required for get_messages/update)'),
-      data: z.record(z.unknown()).optional().describe('Request body for send_message/update/delete actions'),
+      data: z.record(z.string(), z.unknown()).optional().describe('Request body for send_message/update/delete actions'),
       query: z.string().optional().describe('Search query for search action'),
       limit: z.number().optional().describe('Pagination limit'),
       offset: z.number().optional().describe('Pagination offset'),

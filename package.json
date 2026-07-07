@@ -1,6 +1,6 @@
 {
   "name": "@messengerflow/mcp-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MCP server for MessengerFlow — manage campaigns, accounts, leads, inbox, and analytics via AI assistants",
   "bin": {
     "messengerflow-mcp": "./dist/index.js"
@@ -15,7 +15,8 @@
     "start:remote": "node dist/remote.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.11.0"
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
