@@ -88,3 +88,7 @@ To get your API key:
 npm run build   # Outputs to dist/
 npm start       # Run built version
 ```
+
+## Source and contributions
+
+This repository is a read-only mirror of the `mcp/` directory of the MessengerFlow monorepo, updated automatically on every change. Issues and pull requests are welcome here; accepted changes are applied in the monorepo and mirrored back. Licensed under MIT.

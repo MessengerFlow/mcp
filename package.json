@@ -1,7 +1,16 @@
 {
   "name": "@messengerflow/mcp-server",
   "version": "1.0.4",
-  "description": "MCP server for MessengerFlow — manage campaigns, accounts, leads, inbox, and analytics via AI assistants",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MessengerFlow/mcp.git"
+  },
+  "homepage": "https://messengerflow.com/docs/integrations/mcp-server",
+  "bugs": {
+    "url": "https://github.com/MessengerFlow/mcp/issues"
+  },
+  "description": "MCP server for MessengerFlow \u2014 manage campaigns, accounts, leads, inbox, and analytics via AI assistants",
   "bin": {
     "messengerflow-mcp": "./dist/index.js"
   },
