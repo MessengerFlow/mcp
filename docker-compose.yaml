@@ -1,9 +1,13 @@
 services:
   mcp:
-    image: ghcr.io/messengerflow/messengerflow-mcp:latest
+    image: ghcr.io/messengerflow/messengerflow/mcp:latest
     env_file: .env.production
     ports:
       - "3003:3003"
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3003/health || exit 1"]
+      interval: 30s
+      timeout: 5s
