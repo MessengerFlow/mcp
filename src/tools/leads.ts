@@ -12,9 +12,11 @@ Actions and their fields:
 - get_leads: id, optional limit (max 100), offset, search
 - rename: id, data { name }
 - import: data { name, data: [{ id (Facebook ID, letters and digits), name (optional) }] }. Parse a CSV into this array first.
-- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (array, may be empty), max (optional), filter_keywords (optional array) }
+- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter), max (optional), filter_keywords (optional array) }
 - scrape_pages: data { name, query, locations (1-200 strings), keywords (array, max 10), excludedKeywords (array, max 10) }
 - merge: data { name, collection_ids }
+- get_limit: no fields. Returns how many imported leads the plan still allows.
+- recontact_audience: data { name, inactive_days (1-3650), include_replied (optional, default false) }. Builds a collection of people whose last message from this user is older than inactive_days. People who replied or booked are left out by default.
 
 Scrapes run in the background and can take hours, so check progress with get_collection. export returns CSV text and shortens very large collections.`
 
@@ -25,7 +27,7 @@ export function registerLeadTools(server: McpServer) {
     {
       action: z.enum([
         'list_collections', 'get_collection', 'import', 'scrape_group', 'scrape_pages',
-        'merge', 'rename', 'delete', 'get_leads', 'export', 'rescrape', 'retry',
+        'merge', 'rename', 'delete', 'get_leads', 'export', 'rescrape', 'retry', 'get_limit', 'recontact_audience',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Collection ID'),
       data: z.record(z.string(), z.unknown()).optional().describe('Fields for import/scrape/merge/rename, listed in the tool description'),
@@ -50,7 +52,7 @@ export function registerLeadTools(server: McpServer) {
             result = await api('/leads/import', { method: 'POST', body: data })
             break
           case 'scrape_group':
-            result = await api('/leads/groups', { method: 'POST', body: data })
+            result = await api('/leads/groups', { method: 'POST', body: { group_target_countries: [], ...data } })
             break
           case 'scrape_pages':
             result = await api('/leads/pages', { method: 'POST', body: data })
@@ -73,6 +75,12 @@ export function registerLeadTools(server: McpServer) {
           case 'export':
             if (!id) return failure('Collection ID is required')
             result = truncateCsv(await api<string>(`/leads/${id}/export`))
+            break
+          case 'recontact_audience':
+            result = await api('/leads/recontact', { method: 'POST', body: data })
+            break
+          case 'get_limit':
+            result = await api('/leads/limit')
             break
           case 'rescrape':
             if (!id) return failure('Collection ID is required')

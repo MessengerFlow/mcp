@@ -10,7 +10,9 @@ Actions and their fields:
 - search: query, optional limit, offset, include_unavailable
 - get_messages: id, optional limit (max 100), offset
 - get_unread_count: optional include_unavailable
-- send_message: id (conversation), data { body (max 2048 chars) }. This sends a real Facebook message to the lead.
+- send_message: id (conversation), data { body (max 2048 chars), image_urls, video_urls, voice_url, voice_duration }. Media links come from upload_media. This sends a real Facebook message to the lead.
+- retry_message: data { message_id }. Retries a failed message.
+- delete_message: data { message_id }. Removes a message that has not been sent.
 - update: id, data { key, value } where key is 'read', 'pinned', 'tags', 'booked_at' or 'responded'
 - delete: data { conversations: [conversation IDs] }
 
@@ -22,7 +24,8 @@ export function registerInboxTools(server: McpServer) {
     DESCRIPTION,
     {
       action: z.enum([
-        'list', 'search', 'get_messages', 'send_message', 'update', 'delete', 'get_unread_count',
+        'list', 'search', 'get_messages', 'send_message', 'retry_message', 'delete_message',
+        'update', 'delete', 'get_unread_count',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Conversation ID'),
       data: z.record(z.string(), z.unknown()).optional().describe('Fields for send_message/update/delete, listed in the tool description'),
@@ -55,6 +58,12 @@ export function registerInboxTools(server: McpServer) {
               method: 'POST',
               body: { ...(id && { conversation_id: id }), ...data },
             })
+            break
+          case 'retry_message':
+            result = await api('/inbox/conversations/message-retry', { method: 'POST', body: data })
+            break
+          case 'delete_message':
+            result = await api('/inbox/conversations/message', { method: 'DELETE', body: data })
             break
           case 'update':
             if (!id) return failure('Conversation ID is required')

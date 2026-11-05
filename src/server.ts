@@ -4,6 +4,9 @@ import { registerAccountTools } from './tools/accounts.js'
 import { registerLeadTools } from './tools/leads.js'
 import { registerInboxTools } from './tools/inbox.js'
 import { registerAnalyticsTools } from './tools/analytics.js'
+import { registerMediaTools } from './tools/media.js'
+import { registerProxyTools } from './tools/proxies.js'
+import { registerWorkspaceTools } from './tools/workspace.js'
 import { registerDashboardResource } from './resources/dashboard.js'
 
 const INSTRUCTIONS = `MessengerFlow sends Facebook outreach from the user's accounts.
@@ -18,7 +21,7 @@ If an account hits a captcha or login check, stop what you are doing and tell th
 
 export function createServer() {
   const server = new McpServer(
-    { name: 'MessengerFlow', version: '1.1.0' },
+    { name: 'MessengerFlow', version: '1.2.0' },
     { instructions: INSTRUCTIONS },
   )
 
@@ -27,6 +30,9 @@ export function createServer() {
   registerLeadTools(server)
   registerInboxTools(server)
   registerAnalyticsTools(server)
+  registerProxyTools(server)
+  registerMediaTools(server)
+  registerWorkspaceTools(server)
 
   registerDashboardResource(server)
 

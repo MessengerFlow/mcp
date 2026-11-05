@@ -19,6 +19,8 @@ const ISSUER_URL = process.env.MCP_ISSUER_URL || `http://localhost:${PORT}`
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM_URL || 'https://auth.messengerflow.com/realms/messengerflow'
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'messengerflow-mcp'
 
+const ALLOWED_SCOPES = ['openid', 'profile', 'email', 'offline_access']
+
 async function assertTokenResponse(response: globalThis.Response, step: string) {
   if (response.ok) return
   const text = await response.text()
@@ -45,7 +47,6 @@ class KeycloakOAuthProvider implements OAuthServerProvider {
       code_challenge_method: 'S256',
     })
     if (params.state) searchParams.set('state', params.state)
-    const ALLOWED_SCOPES = ['openid', 'profile', 'email', 'offline_access']
     const scopes = params.scopes?.filter(s => ALLOWED_SCOPES.includes(s))
     if (scopes?.length) searchParams.set('scope', scopes.join(' '))
     url.search = searchParams.toString()
@@ -118,6 +119,7 @@ app.use(mcpAuthRouter({
   provider,
   issuerUrl,
   resourceServerUrl: mcpServerUrl,
+  scopesSupported: ALLOWED_SCOPES,
 }))
 
 const authMiddleware = requireBearerAuth({
