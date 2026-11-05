@@ -22,7 +22,7 @@
     "dev:remote": "tsx src/remote.ts",
     "start": "node dist/index.js",
     "start:remote": "node dist/remote.js",
-    "test": "tsx --test 'src/**/*.test.ts'",
+    "test": "tsx --test src/*.test.ts src/tools/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
