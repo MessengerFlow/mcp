@@ -1,20 +1,13 @@
 import { config } from './config.js'
 import { tokenStore } from './auth.js'
+import { ApiError, errorFromBody, parseBody } from './errors.js'
+
+export { ApiError }
 
 interface RequestOptions {
   method?: string
   body?: unknown
   params?: Record<string, string | number | boolean | undefined>
-}
-
-export class ApiError extends Error {
-  constructor(
-    public statusCode: number,
-    message: string,
-  ) {
-    super(message)
-    this.name = 'ApiError'
-  }
 }
 
 export async function api<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -47,25 +40,22 @@ export async function api<T = unknown>(path: string, options: RequestOptions = {
     body: body ? JSON.stringify(body) : undefined,
   })
 
+  const text = await res.text()
+
   if (!res.ok) {
-    if (res.status === 401) throw new ApiError(401, 'API key is invalid or revoked')
+    if (res.status === 401) {
+      throw new ApiError(401, bearerToken
+        ? 'Your MessengerFlow session expired. Reconnect the MessengerFlow connector.'
+        : 'API key is invalid or revoked')
+    }
     if (res.status === 429) {
       const retryAfter = res.headers.get('retry-after') || '60'
       throw new ApiError(429, `Rate limited. Retry after ${retryAfter}s`)
     }
 
-    let message = `Request failed (${res.status})`
-    try {
-      const data = await res.json()
-      if (data.error) message = data.error
-      else if (data.message) message = data.message
-    } catch {}
-
-    if (res.status === 403) message = `Access denied: ${message}`
-    throw new ApiError(res.status, message)
+    const message = errorFromBody(res.status, text)
+    throw new ApiError(res.status, res.status === 403 ? `Access denied: ${message}` : message)
   }
 
-  const text = await res.text()
-  if (!text) return {} as T
-  return JSON.parse(text) as T
+  return parseBody(res.headers.get('content-type') ?? '', text) as T
 }

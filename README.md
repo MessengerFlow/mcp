@@ -4,6 +4,8 @@
 
 MCP server for [MessengerFlow](https://messengerflow.com) — manage campaigns, accounts, leads, inbox, and analytics from AI assistants like Claude Desktop.
 
+Requires an active subscription on the Momentum plan or above.
+
 ## Setup
 
 ### Claude Desktop
@@ -26,7 +28,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 
 ### Remote Server (OAuth)
 
-No API key needed — authenticates with your MessengerFlow account:
+No API key needed, authenticates with your MessengerFlow account. In Claude, add it as a custom connector using `https://mcp.messengerflow.com/mcp`, or in other clients:
 
 ```json
 {

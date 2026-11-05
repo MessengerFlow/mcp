@@ -7,29 +7,32 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { OAuthTokensSchema } from '@modelcontextprotocol/sdk/shared/auth.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
 import type { OAuthServerProvider, AuthorizationParams } from '@modelcontextprotocol/sdk/server/auth/provider.js'
-import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js'
+import { InvalidGrantError } from '@modelcontextprotocol/sdk/server/auth/errors.js'
 import type { OAuthClientInformationFull, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js'
 import type { Response } from 'express'
 import { tokenStore, verifyAccessToken } from './auth.js'
 import { createServer } from './server.js'
+import { statelessClientsStore } from './oauth-clients.js'
 
 const PORT = parseInt(process.env.PORT || '3003')
 const ISSUER_URL = process.env.MCP_ISSUER_URL || `http://localhost:${PORT}`
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM_URL || 'https://auth.messengerflow.com/realms/messengerflow'
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'messengerflow-mcp'
 
+async function assertTokenResponse(response: globalThis.Response, step: string) {
+  if (response.ok) return
+  const text = await response.text()
+  if (response.status === 400 || response.status === 401) {
+    throw new InvalidGrantError(`${step} was rejected. Sign in again.`)
+  }
+  throw new Error(`${step} failed (${response.status}): ${text}`)
+}
+
 class KeycloakOAuthProvider implements OAuthServerProvider {
   skipLocalPkceValidation = true
-  private clients = new Map<string, OAuthClientInformationFull>()
 
-  get clientsStore(): OAuthRegisteredClientsStore {
-    return {
-      getClient: async (clientId: string) => this.clients.get(clientId),
-      registerClient: async (clientInfo: OAuthClientInformationFull) => {
-        this.clients.set(clientInfo.client_id, clientInfo)
-        return clientInfo
-      },
-    }
+  get clientsStore() {
+    return statelessClientsStore
   }
 
   async authorize(_client: OAuthClientInformationFull, params: AuthorizationParams, res: Response) {
@@ -72,10 +75,7 @@ class KeycloakOAuthProvider implements OAuthServerProvider {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     })
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`Token exchange failed (${response.status}): ${text}`)
-    }
+    await assertTokenResponse(response, 'Token exchange')
     return OAuthTokensSchema.parse(await response.json())
   }
 
@@ -96,10 +96,7 @@ class KeycloakOAuthProvider implements OAuthServerProvider {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     })
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`Token refresh failed (${response.status}): ${text}`)
-    }
+    await assertTokenResponse(response, 'Token refresh')
     return OAuthTokensSchema.parse(await response.json())
   }
 
@@ -131,6 +128,14 @@ const authMiddleware = requireBearerAuth({
 
 const transports = new Map<string, StreamableHTTPServerTransport>()
 
+function sendSessionNotFound(res: Response) {
+  res.status(404).json({
+    jsonrpc: '2.0',
+    error: { code: -32001, message: 'Session not found' },
+    id: null,
+  })
+}
+
 app.post('/mcp', authMiddleware, async (req: any, res: any) => {
   const token = req.auth?.token as string | undefined
   const sessionId = req.headers['mcp-session-id'] as string | undefined
@@ -138,9 +143,14 @@ app.post('/mcp', authMiddleware, async (req: any, res: any) => {
   try {
     let transport: StreamableHTTPServerTransport
 
-    if (sessionId && transports.has(sessionId)) {
+    if (sessionId && !transports.has(sessionId)) {
+      sendSessionNotFound(res)
+      return
+    }
+
+    if (sessionId) {
       transport = transports.get(sessionId)!
-    } else if (!sessionId && isInitializeRequest(req.body)) {
+    } else if (isInitializeRequest(req.body)) {
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sid) => {
@@ -156,7 +166,7 @@ app.post('/mcp', authMiddleware, async (req: any, res: any) => {
     } else {
       res.status(400).json({
         jsonrpc: '2.0',
-        error: { code: -32000, message: 'Bad Request: No valid session ID' },
+        error: { code: -32000, message: 'Bad Request: Initialize a session first' },
         id: null,
       })
       return
@@ -180,7 +190,7 @@ app.get('/mcp', authMiddleware, async (req: any, res: any) => {
   const sessionId = req.headers['mcp-session-id'] as string | undefined
   const transport = sessionId ? transports.get(sessionId) : undefined
   if (!transport) {
-    res.status(400).send('Invalid or missing session ID')
+    sendSessionNotFound(res)
     return
   }
   await tokenStore.run(token!, () => transport.handleRequest(req, res))
@@ -191,7 +201,7 @@ app.delete('/mcp', authMiddleware, async (req: any, res: any) => {
   const sessionId = req.headers['mcp-session-id'] as string | undefined
   const transport = sessionId ? transports.get(sessionId) : undefined
   if (!transport) {
-    res.status(400).send('Invalid or missing session ID')
+    sendSessionNotFound(res)
     return
   }
   await tokenStore.run(token!, () => transport.handleRequest(req, res))
