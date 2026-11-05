@@ -11,9 +11,9 @@ import { registerDashboardResource } from './resources/dashboard.js'
 
 const INSTRUCTIONS = `MessengerFlow sends Facebook outreach from the user's accounts.
 
-Typical flow: check manage_accounts for healthy accounts, build a lead collection with manage_leads, create a campaign with manage_campaigns, review it with the user, then start it. Follow results with get_analytics and reply through manage_inbox.
+Typical flow: check manage_accounts for healthy accounts, find and join groups or use friend suggestions, build a lead collection with manage_leads, create a campaign with manage_campaigns, review it with the user, then start it. Follow results with get_analytics and reply through manage_inbox.
 
-Confirm with the user before anything that reaches real people or cannot be undone: starting a campaign, sending a message, deleting anything.
+Confirm with the user before anything that reaches real people or cannot be undone: starting a campaign, sending a message, joining a group, publishing a post, deleting anything.
 
 Accounts in warmup are held back or send at reduced volume until warmup_unlocks_at. Do not suggest raising limits to get around this.
 
@@ -21,7 +21,7 @@ If an account hits a captcha or login check, stop what you are doing and tell th
 
 export function createServer() {
   const server = new McpServer(
-    { name: 'MessengerFlow', version: '1.2.0' },
+    { name: 'MessengerFlow', version: '1.3.0' },
     { instructions: INSTRUCTIONS },
   )
 
