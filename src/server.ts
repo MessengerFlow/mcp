@@ -14,7 +14,7 @@ Confirm with the user before anything that reaches real people or cannot be undo
 
 Accounts in warmup are held back or send at reduced volume until warmup_unlocks_at. Do not suggest raising limits to get around this.
 
-If an account needs a captcha or login check cleared, use manage_accounts live_session_link and give the user the link. Passwords and 2FA keys passed to manage_accounts add appear in this conversation, so suggest the account form in the app for those.`
+If an account hits a captcha or login check, stop what you are doing and tell the user what happened and how to move forward: they sign in themselves through the manage_accounts live_session_link and handle it there. Do not try to get past it. Passwords and 2FA keys passed to manage_accounts add appear in this conversation, so suggest the account form in the app for those.`
 
 export function createServer() {
   const server = new McpServer(
