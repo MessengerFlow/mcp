@@ -16,10 +16,16 @@ Actions and their fields:
 - get_activity: id, optional limit (max 100), offset
 - get_profile: id. Returns the wanted profile, what is applied on Facebook, and any pending update.
 - update_profile: id, data { bio (max 101 chars), fb_name (max 64 chars), picture, banner }. picture and banner are s3://profiles/ links from upload_media. A worker applies the change to Facebook about 5 minutes later, so check get_profile afterwards.
+- get_setup: id. Returns the account's post and profile plan and the progress of each step.
+- set_setup: id, data { the full plan, see below }. Replaces the plan, so start from get_setup and send everything you want to keep.
+- resume_setup: id. Resumes a paused plan.
+- cancel_setup: id. Cancels the steps that have not run yet.
 - get_warming: id. Returns the Nexus warming settings.
 - set_warming: id, data { niche (20-500 chars, what the account is about), enabled, like_enabled, like_rate (0-100), emotion (0-100), scroll_enabled, posting_enabled }
 - remove_warming: id. Takes the account out of Nexus warming.
 - live_session_link: id. Returns the page where the user clears a captcha or login checkpoint in a browser. This cannot be done through MCP.
+
+The setup plan is how to publish posts and fill in detailed profile fields. Steps run one at a time, about a day apart, during daytime, and only once the account has finished its warmup hold, so a post is not instant. It needs the setup feature on the user's account. All plan fields are optional: picture and cover (keys from upload_media), bio (max 101 chars), work { company, position }, education { school }, city, hometown, posts [{ text (max 2000 chars), image (key from upload_media), audience: 'public' or 'friends' }] (max 10), cleanup (boolean, clears old posts first). A step that already ran is not repeated.
 
 An account needs attention when banned, invalid_credentials, invalid_2fa, requires_pin, identity_required, error or flagged is true.`
 
@@ -30,7 +36,8 @@ export function registerAccountTools(server: McpServer) {
     {
       action: z.enum([
         'list', 'get', 'add', 'update', 'delete', 'get_stats', 'get_logs', 'get_activity',
-        'get_profile', 'update_profile', 'get_warming', 'set_warming', 'remove_warming', 'live_session_link',
+        'get_profile', 'update_profile', 'get_setup', 'set_setup', 'resume_setup', 'cancel_setup',
+        'get_warming', 'set_warming', 'remove_warming', 'live_session_link',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Account ID'),
       data: z.record(z.string(), z.unknown()).optional().describe('Fields for the action, listed in the tool description'),
@@ -80,6 +87,22 @@ export function registerAccountTools(server: McpServer) {
           case 'update_profile':
             if (!id) return failure('Account ID is required')
             result = await api(`/accounts/${id}/profile`, { method: 'PATCH', body: data })
+            break
+          case 'get_setup':
+            if (!id) return failure('Account ID is required')
+            result = await api(`/accounts/${id}/setup`)
+            break
+          case 'set_setup':
+            if (!id) return failure('Account ID is required')
+            result = await api(`/accounts/${id}/setup`, { method: 'PUT', body: data })
+            break
+          case 'resume_setup':
+            if (!id) return failure('Account ID is required')
+            result = await api(`/accounts/${id}/setup/resume`, { method: 'POST' })
+            break
+          case 'cancel_setup':
+            if (!id) return failure('Account ID is required')
+            result = await api(`/accounts/${id}/setup`, { method: 'DELETE' })
             break
           case 'get_warming':
             if (!id) return failure('Account ID is required')

@@ -10,6 +10,7 @@ const DESCRIPTION = `Upload a file from a public https link and get back a Messe
 - type 'video' (max 50 MB): use it in send_message video_urls, or campaign data video { url, slot }
 - type 'voice' (max 5 MB, up to 60 seconds): also returns duration. Use it in send_message voice_url and voice_duration, or campaign data voice_message { url, duration, slot }
 - type 'profile_picture' or 'profile_banner' (max 10 MB, needs id = account ID): use the link in manage_accounts update_profile
+- type 'setup_picture', 'setup_cover' or 'setup_post' (max 10 MB, needs id = account ID): returns a key to use in a manage_accounts set_setup plan
 
 slot is the zero-based position in the campaign's messages. The link must point straight at the file, without redirects.`
 
@@ -20,7 +21,9 @@ export function registerMediaTools(server: McpServer) {
     'upload_media',
     DESCRIPTION,
     {
-      type: z.enum(['image', 'video', 'voice', 'profile_picture', 'profile_banner']).describe('What the file is for'),
+      type: z.enum([
+        'image', 'video', 'voice', 'profile_picture', 'profile_banner', 'setup_picture', 'setup_cover', 'setup_post',
+      ]).describe('What the file is for'),
       url: z.string().describe('Public https link to the file'),
       id: z.guid().optional().describe('Account ID, for profile uploads'),
     },
@@ -32,8 +35,11 @@ export function registerMediaTools(server: McpServer) {
           return success(await apiUpload(path, await downloadMedia(url)))
         }
 
-        if (!id) return failure('Account ID is required for profile uploads')
+        if (!id) return failure('Account ID is required for this upload')
         const file = await downloadMedia(url)
+        if (type === 'setup_picture' || type === 'setup_cover' || type === 'setup_post') {
+          return success(await apiUpload(`/accounts/${id}/setup/upload`, file, { type: type.replace('setup_', '') }))
+        }
         return success(await apiUpload(`/accounts/${id}/profile/upload`, file, { type: PROFILE_TYPES[type] }))
       } catch (e: any) {
         return failure(e.message)
