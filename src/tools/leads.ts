@@ -12,7 +12,8 @@ Actions and their fields:
 - get_leads: id, optional limit (max 100), offset, search
 - rename: id, data { name }
 - import: data { name, data: [{ id (Facebook ID, letters and digits), name (optional) }] }. Parse a CSV into this array first.
-- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter), max (optional), filter_keywords (optional array) }
+- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter, and it needs AI features on the plan), max (optional), filter_keywords (optional array) }
+- scrape_suggestions: data { name, account_id, max (optional, up to 500, default 200), min_mutual_friends (optional) }. Builds a collection from the people Facebook suggests to that account, keeping how many mutual friends each has. Campaigns reach people with the most mutual friends first.
 - scrape_pages: data { name, query, locations (1-200 strings), keywords (array, max 10), excludedKeywords (array, max 10) }
 - merge: data { name, collection_ids }
 - get_limit: no fields. Returns how many imported leads the plan still allows.
@@ -26,7 +27,7 @@ export function registerLeadTools(server: McpServer) {
     DESCRIPTION,
     {
       action: z.enum([
-        'list_collections', 'get_collection', 'import', 'scrape_group', 'scrape_pages',
+        'list_collections', 'get_collection', 'import', 'scrape_group', 'scrape_suggestions', 'scrape_pages',
         'merge', 'rename', 'delete', 'get_leads', 'export', 'rescrape', 'retry', 'get_limit', 'recontact_audience',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Collection ID'),
@@ -53,6 +54,9 @@ export function registerLeadTools(server: McpServer) {
             break
           case 'scrape_group':
             result = await api('/leads/groups', { method: 'POST', body: { group_target_countries: [], ...data } })
+            break
+          case 'scrape_suggestions':
+            result = await api('/leads/suggestions', { method: 'POST', body: data })
             break
           case 'scrape_pages':
             result = await api('/leads/pages', { method: 'POST', body: data })
