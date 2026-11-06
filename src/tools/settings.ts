@@ -1,12 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { api } from '../client.js'
+import { toPlanSummary } from './plan.js'
 import { failure, success } from './result.js'
 
 const DESCRIPTION = `Account-level items: plan and limits, billing, notifications, saved replies, campaign drafts, webhooks, and AI message rewriting.
 
 Actions and their fields:
-- get_plan: no fields. Returns the plan, status, limits and enabled features.
+- get_plan: no fields. Returns the plan, what it allows, current usage, and what every plan includes.
 - list_invoices: optional limit
 - billing_portal_link: no fields. Returns a link where the user manages payment details themselves.
 - preview_plan_change: data { plan: 'ignition', 'momentum' or 'apex', interval: 'monthly' or 'yearly' }. Shows the cost of a change without making it. Plan changes are made by the user.
@@ -35,9 +36,9 @@ const ACTIONS = [
   'rewrite_message',
 ] as const
 
-export function registerWorkspaceTools(server: McpServer) {
+export function registerSettingsTools(server: McpServer) {
   server.tool(
-    'manage_workspace',
+    'manage_settings',
     DESCRIPTION,
     {
       action: z.enum(ACTIONS).describe('Action to perform'),
@@ -45,14 +46,14 @@ export function registerWorkspaceTools(server: McpServer) {
       data: z.record(z.string(), z.unknown()).optional().describe('Fields for the action, listed in the tool description'),
       limit: z.number().optional().describe('Page size'),
     },
-    { title: 'Workspace', destructiveHint: true, openWorldHint: true },
+    { title: 'Settings', destructiveHint: true, openWorldHint: true },
     async ({ action, id, data, limit }) => {
       try {
         let result: unknown
 
         switch (action) {
           case 'get_plan':
-            result = await api('/billing/status')
+            result = toPlanSummary(await api('/billing/status'))
             break
           case 'list_invoices':
             result = await api('/billing/invoices', { params: { limit } })
