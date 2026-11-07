@@ -15,10 +15,8 @@ Actions and their fields:
 - add: data { email (email, FB username or phone), password (6+ chars), secret (optional 2FA setup key, 16-39 chars, not a 6-digit code), display_name (optional), chat_pin (optional, 6 digits), proxy (optional, UUID of the user's own proxy) }
 - update: id, data { display_name, enabled, password, secret, chat_pin, proxy }
 - get_activity: id, optional limit (max 100), offset
-- get_profile: id. Returns the wanted profile, what is applied on Facebook, and any pending update.
-- update_profile: id, data { bio (max 101 chars), fb_name (max 64 chars), picture, banner }. picture and banner are s3://profiles/ links from upload_media. A worker applies the change to Facebook about 5 minutes later, so check get_profile afterwards.
-- get_setup: id. Returns the account's post and profile plan and the progress of each step.
-- set_setup: id, data { the full plan, see below }. Replaces the plan, so start from get_setup and send everything you want to keep.
+- get_setup: id. Returns the account's post and profile plan, the progress of each step, and account_enabled.
+- set_setup: id, data { the full plan, see below }. Replaces every step that has not run yet, so start from get_setup and send everything you want to keep, or those steps are cancelled.
 - resume_setup: id. Resumes a paused plan.
 - cancel_setup: id. Cancels the steps that have not run yet.
 - get_warming: id. Returns the Nexus warming settings.
@@ -27,7 +25,7 @@ Actions and their fields:
 - skip_warmup: id, data { confirm: true }. Ends the warmup hold now, so outreach, scraping and inbox sync start at once. Only when the user asks for it by name, after you tell them the risk: new logins that act straight away are more likely to be restricted. Never on an account with a sign-in or Facebook problem.
 - live_session_link: id. Returns the page where the user clears a captcha or login checkpoint in a browser. This cannot be done through MCP.
 
-The setup plan is how to publish posts and fill in detailed profile fields. Steps run one at a time, about a day apart, during daytime, and only once the account has finished its warmup hold, so a post is not instant. It needs the setup feature on the user's account. All plan fields are optional: picture and cover (keys from upload_media), bio (max 101 chars), work { company, position }, education { school }, city, hometown, posts [{ text (max 2000 chars), image (key from upload_media), audience: 'public' or 'friends' }] (max 10), cleanup (boolean, clears old posts first). A step that already ran is not repeated.
+The setup plan is the only way to publish posts and change a profile: picture, cover, bio, work, education, city and hometown. The Facebook name cannot be changed here. Steps run one at a time, about a day apart, during daytime in the account's proxy location, and only once the account has finished its warmup hold, so a post is not instant. Nothing runs while account_enabled is false, so tell the user to turn the account on. It needs the setup feature on the user's account. Tell the user that adding work or education makes Facebook publish a public update, and so does a new picture or cover. All plan fields are optional: picture and cover (keys from upload_media), bio (max 101 chars), work { company, position } (Facebook needs both), education { school }, city, hometown, posts [{ text (max 2000 chars), image (key from upload_media), audience: 'public' or 'friends' }] (max 10), cleanup (boolean, clears old posts first). A step that already ran is not repeated.
 
 An account needs attention when banned, invalid_credentials, invalid_2fa, requires_pin, identity_required, error or flagged is true.`
 
@@ -38,7 +36,7 @@ export function registerAccountTools(server: McpServer) {
     {
       action: z.enum([
         'list', 'get', 'add', 'update', 'delete', 'get_stats', 'get_logs', 'get_activity',
-        'get_profile', 'update_profile', 'get_setup', 'set_setup', 'resume_setup', 'cancel_setup',
+        'get_setup', 'set_setup', 'resume_setup', 'cancel_setup',
         'get_warming', 'set_warming', 'remove_warming', 'live_session_link', 'get_usage', 'skip_warmup',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Account ID'),
@@ -81,14 +79,6 @@ export function registerAccountTools(server: McpServer) {
           case 'get_activity':
             if (!id) return failure('Account ID is required')
             result = await api(`/accounts/${id}/activity`, { params: { limit, offset } })
-            break
-          case 'get_profile':
-            if (!id) return failure('Account ID is required')
-            result = await api(`/accounts/${id}/profile`)
-            break
-          case 'update_profile':
-            if (!id) return failure('Account ID is required')
-            result = await api(`/accounts/${id}/profile`, { method: 'PATCH', body: data })
             break
           case 'get_setup':
             if (!id) return failure('Account ID is required')
