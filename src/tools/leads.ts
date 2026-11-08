@@ -15,7 +15,9 @@ Actions and their fields:
 - scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter, and it needs AI features on the plan), max (optional), filter_keywords (optional array) }
 - scrape_suggestions: data { name, account_id, max (optional, up to 500, default 200), min_mutual_friends (optional) }. Builds a collection from the people Facebook suggests to that account, keeping how many mutual friends each has. Campaigns reach people with the most mutual friends first.
 - search_groups: data { account_id, query }. Finds Facebook groups. Runs in the background, so poll get_group_action. Results include group_id, name, privacy, members and activity.
-- join_group: data { account_id, group_id }. Joins a group from that account. Runs in the background, so poll get_group_action. Up to 5 per account per day, and not during warmup. The outcome is joined, pending_approval, needs_answers (the group asks entry questions, which the user answers themselves), already_member or unavailable.
+- join_group: data { account_id, group_id }. Joins a group from that account. Runs in the background, so poll get_group_action. Up to 5 per account per day, and not during warmup. The outcome is joined, pending_approval, needs_answers, already_member or unavailable. needs_answers means Facebook already sent the request and asks entry questions; the result includes them (see get_group_questions). Admins often decline requests left unanswered, so offer to answer them.
+- get_group_questions: data { account_id, group_id }. Reads the entry questions of a group the account already asked to join, without submitting anything. Runs in the background, so poll get_group_action. The outcome is questions (with questions: [{ question, type multiple_choice | single_choice | text, options, max_length }], rules and agree_to_rules), not_pending (no request: declined, cancelled or never sent), already_member, no_questions or unreadable.
+- answer_group_questions: data { account_id, group_id, answers: [{ question (exact text from get_group_questions), answer (text for a text question, a list of options for multiple_choice, one option for single_choice) }] }, one answer per question in the same order. Answers are sent to the group admins in the account's name, and submitting also agrees to the group rules: show the user the questions, rules and your drafted answers, and submit only once they approve. Runs in the background, so poll get_group_action. The outcome is answered, questions_changed (the form differs from the answers, nothing was sent, the current questions are included), incomplete (nothing was sent, see reason), not_pending, already_member or no_questions. Reading and answering questions share a limit of 20 per account per day and do not count as joins.
 - get_group_action: id (the action ID). Returns its status, result and any error.
 - scrape_pages: data { name, query, locations (1-200 strings), keywords (array, max 10), excludedKeywords (array, max 10) }
 - merge: data { name, collection_ids }
@@ -31,7 +33,7 @@ export function registerLeadTools(server: McpServer) {
     {
       action: z.enum([
         'list_collections', 'get_collection', 'import', 'scrape_group', 'scrape_suggestions', 'scrape_pages',
-        'search_groups', 'join_group', 'get_group_action',
+        'search_groups', 'join_group', 'get_group_questions', 'answer_group_questions', 'get_group_action',
         'merge', 'rename', 'delete', 'get_leads', 'export', 'rescrape', 'retry', 'get_limit', 'recontact_audience',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Collection ID, or the action ID for get_group_action'),
@@ -67,6 +69,12 @@ export function registerLeadTools(server: McpServer) {
             break
           case 'join_group':
             result = await api('/groups/join', { method: 'POST', body: data })
+            break
+          case 'get_group_questions':
+            result = await api('/groups/questions', { method: 'POST', body: data })
+            break
+          case 'answer_group_questions':
+            result = await api('/groups/answer', { method: 'POST', body: data })
             break
           case 'get_group_action':
             if (!id) return failure('Action ID is required')
