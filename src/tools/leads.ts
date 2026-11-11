@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { api } from '../client.js'
 import { failure, success } from './result.js'
 import { truncateCsv } from './truncate.js'
+import { groupScrapeBody } from './group-scrape.js'
 
 const DESCRIPTION = `Manage lead collections: import, scrape groups or pages, merge, rename, delete, export. Browse leads inside a collection.
 
@@ -12,7 +13,7 @@ Actions and their fields:
 - get_leads: id, optional limit (max 100), offset, search
 - rename: id, data { name }
 - import: data { name, data: [{ id (Facebook ID, letters and digits), name (optional) }] }. Parse a CSV into this array first.
-- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter, and it needs AI features on the plan), max (optional), filter_keywords (optional array) }
+- scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter, and it needs AI features on the plan), max (optional), filter_keywords (optional array), things_in_common (optional boolean, default false) }. With things_in_common, collects only the members Facebook lists under "Members with things in common" for that account instead of the whole member list. Results are usually much smaller and depend on the account; if the group shows no such members for it, the collection fails with that reason.
 - scrape_suggestions: data { name, account_id, max (optional, up to 500, default 200), min_mutual_friends (optional) }. Builds a collection from the people Facebook suggests to that account, keeping how many mutual friends each has. Campaigns reach people with the most mutual friends first.
 - search_groups: data { account_id, query }. Finds Facebook groups. Runs in the background, so poll get_group_action. Results include group_id, name, privacy, members and activity.
 - join_group: data { account_id, group_id }. Joins a group from that account. Runs in the background, so poll get_group_action. Up to 5 per account per day, and not during warmup. MessengerFlow paces joins for account safety: joins on one account run at least 2 hours apart, and any two group actions on one account at least 10 minutes apart. Queue all the joins the user wants at once and check back later; do not wait for each one or space them out yourself. The outcome is joined, pending_approval, needs_answers, already_member or unavailable. needs_answers means Facebook already sent the request and asks entry questions; the result includes them (see get_group_questions). Admins often decline requests left unanswered, so offer to answer them.
@@ -59,7 +60,7 @@ export function registerLeadTools(server: McpServer) {
             result = await api('/leads/import', { method: 'POST', body: data })
             break
           case 'scrape_group':
-            result = await api('/leads/groups', { method: 'POST', body: { group_target_countries: [], ...data } })
+            result = await api('/leads/groups', { method: 'POST', body: groupScrapeBody(data) })
             break
           case 'scrape_suggestions':
             result = await api('/leads/suggestions', { method: 'POST', body: data })
