@@ -10,7 +10,7 @@ const DESCRIPTION = `Manage lead collections: import, scrape groups or pages, me
 Actions and their fields:
 - list_collections: optional limit, offset, search (collection name)
 - get_collection, delete, export, rescrape, retry: id
-- get_leads: id, optional limit (max 100), offset, search
+- get_leads: id, optional limit (max 100), offset, search. Each lead has info_lines: the short lines Facebook shows under the name in the member list, such as job title and company, city, and mutual friends. search matches the name and those lines, so it can count how many leads mention a word. It is not the full About page.
 - rename: id, data { name }
 - import: data { name, data: [{ id (Facebook ID, letters and digits), name (optional) }] }. Parse a CSV into this array first.
 - scrape_group: data { name, group_id (from the group URL), account_id (a healthy account that has joined the group), group_target_countries (optional array of country names, keeps members whose name looks like it comes from those countries; it is estimated from names, not location, so treat it as a rough filter, and it needs AI features on the plan), max (optional), filter_keywords (optional array), things_in_common (optional boolean, default false) }. With things_in_common, collects only the members Facebook lists under "Members with things in common" for that account instead of the whole member list. Results are usually much smaller and depend on the account; if the group shows no such members for it, the collection fails with that reason.
