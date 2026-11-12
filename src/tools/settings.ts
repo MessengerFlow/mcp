@@ -4,7 +4,7 @@ import { api } from '../client.js'
 import { toPlanSummary } from './plan.js'
 import { failure, success } from './result.js'
 
-const DESCRIPTION = `Account-level items: plan and limits, billing, notifications, saved replies, campaign drafts, webhooks, and AI message rewriting.
+const DESCRIPTION = `Account-level items: plan and limits, billing, notifications, saved replies, campaign drafts, webhooks, AI message rewriting, and feedback to the MessengerFlow team.
 
 Actions and their fields:
 - get_plan: no fields. Returns the plan, what it allows, current usage, and what every plan includes.
@@ -24,6 +24,7 @@ Actions and their fields:
 - update_webhook: id, data { url, events, enabled }
 - delete_webhook, test_webhook: id
 - rewrite_message: data { text }. Returns an improved version of a message. Needs AI features on the plan.
+- send_feedback: data { type: 'bug', 'feature' or 'feedback', subject (one line), description }. Sends it to the MessengerFlow team. Describe the problem or wish in your own words with the steps or numbers that matter; do not paste lead lists, conversations or credentials. Up to 10 a day.
 
 Webhook events: message.sent, message.failed, conversation.created, conversation.reply, conversation.booked, campaign.completed, account.status_changed.`
 
@@ -33,7 +34,7 @@ const ACTIONS = [
   'list_saved_replies', 'add_saved_reply', 'delete_saved_reply',
   'list_drafts', 'save_draft', 'delete_draft',
   'list_webhooks', 'create_webhook', 'update_webhook', 'delete_webhook', 'test_webhook',
-  'rewrite_message',
+  'rewrite_message', 'send_feedback',
 ] as const
 
 export function registerSettingsTools(server: McpServer) {
@@ -112,6 +113,12 @@ export function registerSettingsTools(server: McpServer) {
             break
           case 'rewrite_message':
             result = await api('/ai/enhance', { method: 'POST', body: data })
+            break
+          case 'send_feedback':
+            result = await api('/feedback', {
+              method: 'POST',
+              body: { type: data?.type, subject: data?.subject, description: data?.description, source: 'mcp' },
+            })
             break
         }
 
