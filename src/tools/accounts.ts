@@ -15,6 +15,7 @@ Actions and their fields:
 - add: data { email (email, FB username or phone), password (6+ chars), secret (optional 2FA setup key, 16-39 chars, not a 6-digit code), display_name (optional), chat_pin (optional, 6 digits), proxy (optional, UUID of the user's own proxy) }
 - update: id, data { display_name, enabled, password, secret, chat_pin, proxy }
 - get_activity: id, optional limit (max 100), offset
+- list_friends: id, optional limit, offset, data { search (name, profile handle or numeric id) }. The account's current Facebook friends with their mutual friend counts, most mutuals first. The list is read about once a day during inbox syncs, so synced_at says how fresh it is; null means it has not been read yet. Campaigns with skip_existing_friends leave out people on any of the user's accounts' lists.
 - get_setup: id. Returns the account's post and profile plan, the progress of each step, and account_enabled.
 - set_setup: id, data { the full plan, see below }. Replaces every step that has not run yet, so start from get_setup and send everything you want to keep, or those steps are cancelled.
 - resume_setup: id. Resumes a paused plan.
@@ -38,6 +39,7 @@ export function registerAccountTools(server: McpServer) {
         'list', 'get', 'add', 'update', 'delete', 'get_stats', 'get_logs', 'get_activity',
         'get_setup', 'set_setup', 'resume_setup', 'cancel_setup',
         'get_warming', 'set_warming', 'remove_warming', 'live_session_link', 'get_usage', 'skip_warmup',
+        'list_friends',
       ]).describe('Action to perform'),
       id: z.guid().optional().describe('Account ID'),
       data: z.record(z.string(), z.unknown()).optional().describe('Fields for the action, listed in the tool description'),
@@ -79,6 +81,10 @@ export function registerAccountTools(server: McpServer) {
           case 'get_activity':
             if (!id) return failure('Account ID is required')
             result = await api(`/accounts/${id}/activity`, { params: { limit, offset } })
+            break
+          case 'list_friends':
+            if (!id) return failure('Account ID is required')
+            result = await api(`/accounts/${id}/friends`, { params: { limit, offset, search: typeof data?.search === 'string' ? data.search : undefined } })
             break
           case 'get_setup':
             if (!id) return failure('Account ID is required')

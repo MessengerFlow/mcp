@@ -25,7 +25,8 @@ Actions and their fields:
     follow_ups [{ message, send_after (days, 0-90) }] (max 10), send_on_accept (boolean, wait for the friend request to be accepted),
     accept_delay_days (0-90, with send_on_accept: how many days to wait after acceptance before messaging),
     recontact_after_days (1-3650, allows messaging people this campaign would otherwise skip because they were messaged before, as long as their last message is older than this; leave out to never message anyone twice),
-    friend_request_ttl_days (3-14)
+    friend_request_ttl_days (3-14),
+    skip_existing_friends (boolean, default true: leave out people already friends with any of the user's accounts; people who accept this campaign's own friend requests are still messaged. Friends lists are read during inbox syncs, so an account's friends are known from its first sync on)
   }
 
 To message people again after a gap, build the audience with manage_leads recontact_audience, then create a campaign on it with the same number of days in recontact_after_days. Without that field every lead in it is skipped as already messaged.
