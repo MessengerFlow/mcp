@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ApiError, errorFromBody, parseBody } from './errors.js'
+import { ApiError, errorFromBody, formatWait, parseBody, rateLimitMessage } from './errors.js'
 
 test('uses the API message instead of the error flag', () => {
   const body = JSON.stringify({ error: true, statusCode: 400, message: 'name: Required' })
@@ -40,4 +40,35 @@ test('rejects the HTML the app serves for an unknown route', () => {
 
 test('accepts a bare string, which the API sends labelled as HTML', () => {
   assert.equal(parseBody('text/html;charset=utf-8', 'OK'), 'OK')
+})
+
+test('reports a daily cap with its own message and the real wait', () => {
+  const body = JSON.stringify({
+    statusCode: 429,
+    message: 'This account has reached 5 group joins in the last 24 hours',
+    data: { retryAfter: 30000 },
+  })
+  assert.equal(
+    rateLimitMessage(body, null),
+    'This account has reached 5 group joins in the last 24 hours. Try again in 8h 20m.',
+  )
+})
+
+test('prefers the Retry-After header over the body', () => {
+  const body = JSON.stringify({ message: 'Rate limit exceeded (100 requests per minute)', data: { retryAfter: 50 } })
+  assert.equal(rateLimitMessage(body, '37'), 'Rate limit exceeded (100 requests per minute). Try again in 37s.')
+})
+
+test('adds no wait when the API gives none', () => {
+  const body = JSON.stringify({ message: 'Feedback limit reached (10 a day from agents). Try again tomorrow.' })
+  assert.equal(rateLimitMessage(body, null), 'Feedback limit reached (10 a day from agents). Try again tomorrow.')
+  assert.equal(rateLimitMessage('<html>', null), 'Rate limited')
+})
+
+test('formats waits in the largest sensible unit', () => {
+  assert.equal(formatWait(1), '1s')
+  assert.equal(formatWait(89), '89s')
+  assert.equal(formatWait(600), '10 min')
+  assert.equal(formatWait(7200), '2h')
+  assert.equal(formatWait(86400), '24h')
 })

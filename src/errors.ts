@@ -39,3 +39,25 @@ export function parseBody(contentType: string, text: string): unknown {
   if (contentType.includes('json')) return JSON.parse(text)
   return text
 }
+
+export function formatWait(seconds: number): string {
+  if (seconds < 90) return `${Math.ceil(seconds)}s`
+  const minutes = Math.ceil(seconds / 60)
+  if (minutes < 90) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest ? `${hours}h ${rest}m` : `${hours}h`
+}
+
+export function rateLimitMessage(text: string, retryAfterHeader: string | null): string {
+  let data: any
+  try {
+    data = JSON.parse(text)
+  } catch {
+    data = undefined
+  }
+  const message = [data?.message, data?.statusMessage].find(v => typeof v === 'string' && v) ?? 'Rate limited'
+  const seconds = Number(retryAfterHeader ?? data?.data?.retryAfter)
+  if (!Number.isFinite(seconds) || seconds <= 0) return message
+  return `${message.replace(/[.\s]+$/, '')}. Try again in ${formatWait(seconds)}.`
+}

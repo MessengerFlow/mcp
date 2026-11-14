@@ -1,6 +1,6 @@
 import { config } from './config.js'
 import { tokenStore } from './auth.js'
-import { ApiError, errorFromBody, parseBody } from './errors.js'
+import { ApiError, errorFromBody, parseBody, rateLimitMessage } from './errors.js'
 
 export { ApiError }
 
@@ -25,8 +25,7 @@ async function readResponse<T>(res: Response, hasBearer: boolean): Promise<T> {
         : 'API key is invalid or revoked')
     }
     if (res.status === 429) {
-      const retryAfter = res.headers.get('retry-after') || '60'
-      throw new ApiError(429, `Rate limited. Retry after ${retryAfter}s`)
+      throw new ApiError(429, rateLimitMessage(text, res.headers.get('retry-after')))
     }
 
     const message = errorFromBody(res.status, text)
