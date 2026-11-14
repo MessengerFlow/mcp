@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { api } from '../client.js'
+import { tokenStore } from '../auth.js'
+import { config } from '../config.js'
 import { toPlanSummary } from './plan.js'
 import { failure, success } from './result.js'
 
@@ -60,7 +62,12 @@ export function registerSettingsTools(server: McpServer) {
             result = await api('/billing/invoices', { params: { limit } })
             break
           case 'billing_portal_link':
-            result = await api('/billing/portal', { method: 'POST' })
+            result = tokenStore.getStore()
+              ? await api('/billing/portal', { method: 'POST' })
+              : {
+                  url: `${new URL(config.baseUrl).origin}/settings/billing`,
+                  note: 'An API key cannot open the billing portal. The user signs in at this page to manage payment details.',
+                }
             break
           case 'preview_plan_change':
             result = await api('/billing/change-plan-preview', { method: 'POST', body: data })

@@ -9,7 +9,8 @@ const DESCRIPTION = `Add, update and delete Facebook accounts. View account stat
 
 Actions and their fields:
 - list: optional limit, offset
-- get, get_stats, delete: id
+- get, get_stats: id
+- delete: id. Refused when this server runs on an API key; the user then deletes the account in the app.
 - get_usage: optional id, leave it out for every account. Returns the last 24 hours of friend requests, cold messages, group joins and scrapes, pending friend requests against the cap, the daily budget, and warnings. Check it before anything that adds volume.
 - get_logs: id, optional limit, offset
 - add: data { email (email, FB username or phone), password (6+ chars), secret (optional 2FA setup key, 16-39 chars, not a 6-digit code), display_name (optional), chat_pin (optional, 6 digits), proxy (optional, UUID of the user's own proxy) }
