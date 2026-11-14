@@ -16,7 +16,7 @@ Actions and their fields:
 - create: data {
     name (max 50 chars), collection (lead collection UUID, must be finished and contain leads),
     accounts (array of account UUIDs), messages (1-5 strings, max 2500 chars each),
-    range_min, range_max (messages per account per day, 1-75),
+    range_min, range_max (messages per account per day, 1-20),
     rampup_type ('disabled', 'incremental' or 'staged'; staged needs rampup_stages [{ start, end, value }]),
     timezone (IANA name such as America/New_York),
     active_days (1 = Monday through 7 = Sunday),
