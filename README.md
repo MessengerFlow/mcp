@@ -57,18 +57,23 @@ MESSENGERFLOW_API_KEY=mf_your_key npm run dev
 
 To get your API key:
 1. Log in to [app.messengerflow.com](https://app.messengerflow.com)
-2. Go to **Settings > API Keys**
-3. Click **Create API Key** and copy the key (starts with `mf_`)
+2. Go to **Settings > Developers**
+3. On the **API Keys** tab, click **Create Key** and copy the key (starts with `mf_`)
+
+An API key cannot change the login email or password, cancel or change the plan, create or revoke API keys, open the billing portal, or delete Facebook accounts. Those are done in the app.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
 | `manage_campaigns` | Create, update, start/stop, delete campaigns. View leads and activity. |
-| `manage_accounts` | Add, update, delete Facebook accounts. View stats and logs. |
-| `manage_leads` | Import CSV, scrape groups/pages, merge, export lead collections. |
+| `manage_accounts` | Add and update Facebook accounts. View stats, usage, logs and friends. Profile setup, warming and Live Session links. |
+| `manage_leads` | Import CSV, scrape groups/pages, find and join groups, merge, export lead collections. |
 | `manage_inbox` | View conversations, search, send messages, manage read status. |
 | `get_analytics` | Dashboard stats, activity charts, performance metrics. |
+| `manage_proxies` | Add, update, verify and delete your own proxies. Switch between managed and own proxies. |
+| `upload_media` | Upload an image, video or voice file from a link for use in messages, campaigns and profile setup. |
+| `manage_settings` | Plan and limits, invoices, notifications, saved replies, campaign drafts, webhooks and feedback. |
 
 ## Resources
 
