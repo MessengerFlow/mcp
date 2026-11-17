@@ -1,5 +1,6 @@
 import { config } from './config.js'
 import { tokenStore } from './auth.js'
+import { MCP_VERSION, toolHeader, toolStore } from './telemetry.js'
 import { ApiError, errorFromBody, parseBody, rateLimitMessage } from './errors.js'
 
 export { ApiError }
@@ -12,7 +13,13 @@ interface RequestOptions {
 
 export function authHeaders(): Record<string, string> {
   const bearerToken = tokenStore.getStore()
-  return bearerToken ? { Authorization: `Bearer ${bearerToken}` } : { 'X-Api-Key': config.apiKey }
+  const headers: Record<string, string> = bearerToken
+    ? { Authorization: `Bearer ${bearerToken}` }
+    : { 'X-Api-Key': config.apiKey }
+  headers['X-MF-Client'] = `mcp/${MCP_VERSION} ${bearerToken ? 'hosted' : 'local'}`
+  const tool = toolHeader(toolStore.getStore())
+  if (tool) headers['X-MF-Tool'] = tool
+  return headers
 }
 
 async function readResponse<T>(res: Response, hasBearer: boolean): Promise<T> {

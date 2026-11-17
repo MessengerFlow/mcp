@@ -8,6 +8,7 @@ import { registerMediaTools } from './tools/media.js'
 import { registerProxyTools } from './tools/proxies.js'
 import { registerSettingsTools } from './tools/settings.js'
 import { registerDashboardResource } from './resources/dashboard.js'
+import { instrumentTools, MCP_VERSION } from './telemetry.js'
 
 const INSTRUCTIONS = `MessengerFlow sends Facebook outreach from the user's accounts.
 
@@ -26,10 +27,10 @@ When the user asks for something MessengerFlow cannot do, a tool fails in a way 
 If an account hits a captcha or login check, stop what you are doing and tell the user what happened and how to move forward: they sign in themselves through the manage_accounts live_session_link and handle it there. Do not try to get past it. Passwords and 2FA keys passed to manage_accounts add appear in this conversation, so suggest the account form in the app for those.`
 
 export function createServer() {
-  const server = new McpServer(
-    { name: 'MessengerFlow', version: '1.4.0' },
+  const server = instrumentTools(new McpServer(
+    { name: 'MessengerFlow', version: MCP_VERSION },
     { instructions: INSTRUCTIONS },
-  )
+  ))
 
   registerCampaignTools(server)
   registerAccountTools(server)
