@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
-export const MCP_VERSION = '1.4.0'
+export const MCP_VERSION = '1.5.0'
 
 export interface ToolCall {
   tool: string

@@ -17,10 +17,10 @@ Actions and their fields:
 - update: id, data { display_name, enabled, password, secret, chat_pin, proxy }
 - get_activity: id, optional limit (max 100), offset
 - list_friends: id, optional limit, offset, data { search (name, profile handle or numeric id) }. The account's current Facebook friends with their mutual friend counts, most mutuals first. The list is read about once a day during inbox syncs, so synced_at says how fresh it is; null means it has not been read yet. Campaigns with skip_existing_friends leave out people on any of the user's accounts' lists.
-- get_setup: id. Returns the account's post and profile plan, the progress of each step, and account_enabled.
-- set_setup: id, data { the full plan, see below }. Replaces every step that has not run yet, so start from get_setup and send everything you want to keep, or those steps are cancelled.
+- get_setup: id. Returns the account's post and profile plan, the progress of each step, account_enabled, and credits (account setups the user has left).
+- set_setup: id, data { the full plan, see below }. Replaces every step that has not run yet, so start from get_setup and send everything you want to keep, or those steps are cancelled. The first plan saved for an account uses one account setup credit; later changes to that account's plan are free. With no credits left it fails with 402 "No account setups left": tell the user, who gets more from MessengerFlow, and do not retry.
 - resume_setup: id. Resumes a paused plan.
-- cancel_setup: id. Cancels the steps that have not run yet.
+- cancel_setup: id. Cancels the steps that have not run yet. If no step has run, the account setup credit is given back.
 - get_warming: id. Returns the Nexus warming settings.
 - set_warming: id, data { niche (20-500 chars, what the account is about), enabled, like_enabled, like_rate (0-100), emotion (0-100), scroll_enabled, posting_enabled }
 - remove_warming: id. Takes the account out of Nexus warming.

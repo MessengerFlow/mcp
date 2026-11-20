@@ -7,6 +7,7 @@ import { registerAnalyticsTools } from './tools/analytics.js'
 import { registerMediaTools } from './tools/media.js'
 import { registerProxyTools } from './tools/proxies.js'
 import { registerSettingsTools } from './tools/settings.js'
+import { registerBrowserTools } from './tools/browser.js'
 import { registerDashboardResource } from './resources/dashboard.js'
 import { instrumentTools, MCP_VERSION } from './telemetry.js'
 
@@ -24,7 +25,9 @@ Act as an experienced Facebook outreach operator. Before anything that adds volu
 
 When the user asks for something MessengerFlow cannot do, a tool fails in a way that looks like a MessengerFlow bug rather than the user's input, or the user clearly wishes the product worked differently, send it to the team with manage_settings send_feedback, then tell the user in one line that you passed it on. Make no promises about whether or when it changes. Send each distinct issue once.
 
-If an account hits a captcha or login check, stop what you are doing and tell the user what happened and how to move forward: they sign in themselves through the manage_accounts live_session_link and handle it there. Do not try to get past it. Passwords and 2FA keys passed to manage_accounts add appear in this conversation, so suggest the account form in the app for those.`
+If an account hits a captcha or login check, stop what you are doing and tell the user what happened and how to move forward: they sign in themselves through the manage_accounts live_session_link and handle it there. Do not try to get past it. Passwords and 2FA keys passed to manage_accounts add appear in this conversation, so suggest the account form in the app for those.
+
+manage_browser opens a browser signed in as one of the user's accounts so you can look at facebook.com and messenger.com pages as that account sees them. It only reads and moves between pages: it cannot click, type or send anything. Prefer the dedicated tools and use it only for what they cannot show. While it runs, campaigns on that account wait, so end the session as soon as you are done. It is a closed beta, available when get_plan shows limits.browserAgent. If it returns CHECKPOINT, stop and give the user the Live Session link it includes.`
 
 export function createServer() {
   const server = instrumentTools(new McpServer(
@@ -40,6 +43,7 @@ export function createServer() {
   registerProxyTools(server)
   registerMediaTools(server)
   registerSettingsTools(server)
+  registerBrowserTools(server)
 
   registerDashboardResource(server)
 
